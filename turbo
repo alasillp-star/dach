@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<title>Dashboard MDM Express</title>
+<style>
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin:0; padding:20px; background:#f0f4f8; }
+h1 { text-align:center; margin-bottom:20px; }
+.container { display:flex; flex-wrap:wrap; gap:20px; justify-content:center; }
+.card { background:#fff; border-radius:15px; padding:20px; box-shadow:0 8px 20px rgba(0,0,0,0.08); width:300px; }
+select, input { padding:6px; border-radius:6px; border:1px solid #cbd5e1; margin:5px 0; }
+canvas { max-width:100%; }
+ul { padding-left: 15px; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<h1>لوحة التحكم - MDM Express</h1>
+
+<div>
+  <label>فلترة حسب: </label>
+  <select id="filterSelect">
+    <option value="today">اليوم</option>
+    <option value="week">الأسبوع</option>
+    <option value="month">الشهر</option>
+    <option value="year">السنة</option>
+  </select>
+  <label>أو اختر تاريخ محدد: </label>
+  <input type="date" id="customDate">
+</div>
+
+<div class="container">
+  <div class="card">
+    <h3>ملخص الطلبات</h3>
+    <p>Order Created: <span id="createdCount">0</span></p>
+    <p>Order Confirmed: <span id="confirmedCount">0</span></p>
+    <p>Order Delivered: <span id="deliveredCount">0</span></p>
+    <p>إجمالي الفلوس المستلمة: LYD <span id="totalMoney">0</span></p>
+  </div>
+  <div class="card">
+    <h3>أفضل المنتجات</h3>
+    <canvas id="productChart"></canvas>
+  </div>
+  <div class="card">
+    <h3>نسبة التسليم لكل منتج</h3>
+    <canvas id="deliveryChart"></canvas>
+  </div>
+  <div class="card">
+    <h3>أفضل المنتجات المؤكدة</h3>
+    <ul id="bestConfirmed"></ul>
+  </div>
+</div>
+
+<script>
+const scriptURL = 'https://script.google.com/macros/s/AKfycbzJ8CEebxbjvBOuQJGgU_Ck2Swep3WlVggJz9g_1bwB4qsgTSj31T4nmnKFGGJUztSq/exec';
+let productChartInstance, deliveryChartInstance;
+
+async function loadData(filter='today', customDate=null) {
+  try {
+    const res = await fetch(scriptURL);
+    const data = await res.json();
+
+    // البيانات من Google Sheet
+    let orders = Array.isArray(data) ? data : data.commandes || [];
+
+    if (!orders.length) {
+      alert('لا توجد طلبات للعرض أو البيانات غير متوفرة بشكل صحيح.');
+      return;
+    }
+
+    const now = new Date();
+    let filteredOrders = orders.filter(o => {
+      const orderDate = new Date(o['تاريخ انشاء الطلبية']);
+      if(customDate){
+        return orderDate.toDateString() === new Date(customDate).toDateString();
+      }
+      if(filter==='today') return orderDate.toDateString() === now.toDateString();
+      if(filter==='week') {
+        const start = new Date(now); start.setDate(now.getDate()-now.getDay());
+        const end = new Date(start); end.setDate(start.getDate()+6);
+        return orderDate>=start && orderDate<=end;
+      }
+      if(filter==='month') return orderDate.getMonth() === now.getMonth() && orderDate.getFullYear() === now.getFullYear();
+      if(filter==='year') return orderDate.getFullYear() === now.getFullYear();
+    });
+
+    // ملخص الطلبات
+    document.getElementById('createdCount').textContent = filteredOrders.length;
+    document.getElementById('confirmedCount').textContent = filteredOrders.filter(o=>o['حالة التأكيد']==='Confirmed').length;
+    document.getElementById('deliveredCount').textContent = filteredOrders.filter(o=>o['حالة التتبع']==='Delivered').length;
+
+    // حساب الفلوس المستلمة
+    const money = filteredOrders
+      .filter(o=>o['حالة التأكيد']==='Confirmed' || o['حالة التتبع']==='Delivered')
+      .reduce((sum,o)=>sum + parseFloat(o['سعر المنتج'] || 0),0);
+    document.getElementById('totalMoney').textContent = money.toFixed(3);
+
+    // أفضل المنتجات
+    const productCounts = {};
+    filteredOrders.forEach(o => {
+      const product = o['إسم المنتج'];
+      if(!productCounts[product]) productCounts[product]={confirmed:0,total:0};
+      productCounts[product].total++;
+      if(o['حالة التأكيد']==='Confirmed') productCounts[product].confirmed++;
+    });
+
+    const productLabels = Object.keys(productCounts);
+    const confirmedData = productLabels.map(p=>productCounts[p].confirmed);
+    const deliveryData = productLabels.map(p=>Math.round(productCounts[p].confirmed/productCounts[p].total*100));
+
+    // تدمير الرسومات القديمة قبل إنشاء جديدة
+    if(productChartInstance) productChartInstance.destroy();
+    if(deliveryChartInstance) deliveryChartInstance.destroy();
+
+    // رسم أفضل المنتجات
+    const ctx1 = document.getElementById('productChart').getContext('2d');
+    productChartInstance = new Chart(ctx1,{
+      type:'bar',
+      data:{
+        labels:productLabels,
+        datasets:[{label:'Confirmed Orders', data:confirmedData, backgroundColor:'rgba(54, 162, 235, 0.6)'}]
+      },
+      options:{responsive:true, plugins:{legend:{display:false}}}
+    });
+
+    // رسم نسبة التسليم
+    const ctx2 = document.getElementById('deliveryChart').getContext('2d');
+    deliveryChartInstance = new Chart(ctx2,{
+      type:'pie',
+      data:{
+        labels:productLabels,
+        datasets:[{label:'Delivery %', data:deliveryData, backgroundColor:productLabels.map(()=>`rgba(${Math.floor(Math.random()*255)},${Math.floor(Math.random()*255)},${Math.floor(Math.random()*255)},0.6)`)}]
+      },
+      options:{responsive:true}
+    });
+
+    // أفضل المنتجات المؤكدة
+    const bestConfirmed = document.getElementById('bestConfirmed');
+    bestConfirmed.innerHTML = '';
+    const sortedConfirmed = Object.entries(productCounts)
+      .sort((a,b)=>b[1].confirmed - a[1].confirmed)
+      .slice(0,5);
+    sortedConfirmed.forEach(([prod,data])=>{
+      bestConfirmed.innerHTML += `<li>${prod} - ${data.confirmed} مؤكد</li>`;
+    });
+
+  } catch(err){
+    alert('خطأ في جلب البيانات: ' + err);
+  }
+}
+
+// تغيير الفلتر أو اختيار يوم محدد
+document.getElementById('filterSelect').addEventListener('change', e=>{
+  document.getElementById('customDate').value = '';
+  loadData(e.target.value);
+});
+document.getElementById('customDate').addEventListener('change', e=>{
+  document.getElementById('filterSelect').value = '';
+  loadData('custom', e.target.value);
+});
+
+// تحميل البيانات مبدئيًا
+loadData();
+</script>
+
+</body>
+</html>
