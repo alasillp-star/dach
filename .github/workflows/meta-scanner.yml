@@ -4,6 +4,14 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '17 */6 * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'scanner.py'
+      - 'keywords.txt'
+      - 'countries.txt'
+      - 'requirements.txt'
+      - '.github/workflows/meta-scanner.yml'
 
 permissions:
   contents: write
