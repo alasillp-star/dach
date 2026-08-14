@@ -1,29 +1,37 @@
-name: Meta Winning Products Scanner
+name: Arabic Winning Products Scanner
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: '17 */6 * * *'
+    - cron: '17 */4 * * *'
   push:
     branches: [main]
     paths:
       - 'scanner.py'
-      - 'keywords.txt'
-      - 'countries.txt'
+      - 'countries_ar.txt'
       - 'requirements.txt'
+      - 'seed/**'
       - '.github/workflows/meta-scanner.yml'
 
 permissions:
   contents: write
 
+concurrency:
+  group: arabic-winning-scanner
+  cancel-in-progress: true
+
 jobs:
   scan:
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
+    # IMPORTANT: Meta rate-limits GitHub/Azure datacenter IPs.
+    # A self-hosted runner uses the user's own network/IP instead.
+    runs-on: self-hosted
+    timeout-minutes: 355
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -32,23 +40,18 @@ jobs:
           cache: pip
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: python -m pip install -r requirements.txt
 
-      - name: Run scanner
+      - name: Configure Git publisher
+        run: |
+          git config user.name "arabic-meta-scanner"
+          git config user.email "actions@users.noreply.github.com"
+
+      - name: Continuous Arabic scan
         env:
           MIN_DAYS: '14'
-          PAIRS_PER_RUN: '12'
-          MAX_RESULTS_PER_PAIR: '40'
+          INTERVAL_SECONDS: '30'
+          MAX_RESULTS: '20'
+          RUN_SECONDS: '20400'
+          STATE_PUSH_SECONDS: '600'
         run: python scanner.py
-
-      - name: Commit updated results
-        run: |
-          git config user.name "meta-scanner-bot"
-          git config user.email "actions@users.noreply.github.com"
-          git add data/winning_ads.csv data/scanner_state.json
-          if git diff --cached --quiet; then
-            echo "No changes"
-          else
-            git commit -m "Update winning ads scan"
-            git push
-          fi
