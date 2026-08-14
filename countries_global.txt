@@ -1,0 +1,57 @@
+# Tier 1 / English
+US
+GB
+CA
+AU
+
+# Europe
+FR
+DE
+IT
+ES
+NL
+BE
+PT
+PL
+RO
+CZ
+GR
+SE
+NO
+DK
+FI
+
+# GCC / MENA
+SA
+AE
+KW
+QA
+BH
+OM
+EG
+MA
+TN
+LY
+JO
+IQ
+LB
+PS
+
+# LatAm
+BR
+MX
+CO
+CL
+AR
+PE
+
+# Growth markets
+TR
+ZA
+IN
+ID
+MY
+PH
+TH
+VN
+PK
