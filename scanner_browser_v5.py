@@ -2,44 +2,47 @@ from __future__ import annotations
 
 import re
 from datetime import timedelta
-from urllib.parse import quote_plus, urlparse
+from urllib.parse import parse_qs, quote_plus, unquote, urlparse
 
 import scanner_browser as v4
 
 # Save V4 implementations before patching them.
 _original_scan_once = v4.scan_once
 _original_keyword_pool = v4.load_short_keyword_pool
-_original_country_pool = v4.load_global_countries
 
-# Search the strongest product-discovery markets first, then rotate through the rest.
-PRIORITY_COUNTRIES = [
-    "US", "GB", "CA", "AU",
-    "FR", "DE", "IT", "ES", "NL", "BE", "PT",
+# Arab markets only. Algeria stays excluded because it is the destination market.
+ARAB_COUNTRIES = [
     "SA", "AE", "KW", "QA", "BH", "OM",
-    "BR", "MX", "CO", "CL",
-    "MA", "TN", "EG", "TR", "ZA",
+    "EG", "MA", "TN", "LY", "JO", "IQ", "LB", "PS",
+    "YE", "SD", "MR",
 ]
 
-# Short, broad terms first. The huge Bessahatkom-derived/self-learning pool is appended after these.
+# Arabic short discovery terms first; then Bessahatkom-derived/self-learned Arabic terms.
 HIGH_SIGNAL_KEYWORDS = [
-    "portable", "rechargeable", "wireless", "automatic", "electric", "smart", "mini",
-    "cordless", "magnetic", "waterproof", "solar", "cleaner", "massager", "organizer",
-    "projector", "vacuum", "trimmer", "brush", "lamp", "holder", "dispenser", "storage",
-    "kitchen", "beauty", "car", "pet", "baby", "gadget",
-    "appareil", "portable", "rechargeable", "sans fil", "automatique", "électrique",
-    "nettoyeur", "masseur", "organisateur", "aspirateur", "brosse", "lampe", "cuisine",
     "جهاز", "كريم", "سيروم", "شامبو", "فرشاة", "منظف", "مدلك", "منظم", "حامل",
-    "شاحن", "مصباح", "كشاف", "مكنسة", "بخاخ", "مقشر", "خلاط", "مروحة", "مطبخ",
-    "سيارة", "تنظيف", "تدليك", "تخزين",
-    "limpiador", "organizador", "masajeador", "aspiradora", "cepillo", "lámpara",
-    "limpador", "massageador", "escova",
+    "شاحن", "مصباح", "كشاف", "مكنسة", "كاميرا", "نظارات", "بخاخ", "مقشر", "ماسك",
+    "قناع", "زيت", "خلاط", "موزع", "مروحة", "مضخة", "لاصقات", "سماعات", "ساعة",
+    "ميزان", "قلاية", "بشرة", "شعر", "تنظيف", "ترطيب", "تكثيف", "تساقط", "تجاعيد",
+    "تدليك", "مطبخ", "سيارة", "تخزين", "أطفال", "قدم", "ركبة", "ظهر", "رقبة",
+    "تخسيس", "تنحيف", "لياقة", "مفاصل", "أسنان", "تبييض", "حبوب", "هالات", "تصبغات",
+    "تجاعيد", "رموش", "حواجب", "شفايف", "وجه", "أظافر", "مساج", "راحة", "نوم",
 ]
 
-CTA_HINTS = (
-    "shop", "buy", "order", "learn", "get", "view", "see", "visit",
-    "acheter", "commander", "voir", "découvrir", "en savoir",
-    "comprar", "ver", "saiba", "compre", "اطلب", "اشتري", "تسوق", "المزيد",
+# Strong sales CTAs first. These are for choosing the correct outbound link, not search keywords.
+SALES_CTA = (
+    "shop now", "buy now", "order now", "get yours", "get offer", "purchase",
+    "acheter", "achetez", "commander", "commandez",
+    "comprar", "compra ahora", "compre agora",
+    "اشتري", "اشتر", "اشتري الآن", "اطلب", "اطلب الآن", "تسوق", "تسوق الآن",
+    "احصل عليه", "احصل عليها", "احصل الآن", "شراء", "الشراء",
 )
+
+SOFT_CTA = (
+    "learn more", "see more", "view", "visit", "en savoir plus", "voir plus",
+    "اكتشف", "المزيد", "اعرف المزيد", "معرفة المزيد",
+)
+
+ARABIC_RE = re.compile(r"[\u0600-\u06FF]")
 
 
 def dedupe(values):
@@ -58,24 +61,35 @@ def dedupe(values):
 
 
 def load_priority_countries():
-    return dedupe(PRIORITY_COUNTRIES + _original_country_pool())
+    return list(ARAB_COUNTRIES)
 
 
 def load_priority_keywords():
-    # Keep one/two-word keywords only.
     values = HIGH_SIGNAL_KEYWORDS + _original_keyword_pool()
-    return [x for x in dedupe(values) if len(x.split()) <= 2 and len(x) <= 32]
+    out = []
+    seen = set()
+    for kw in values:
+        kw = re.sub(r"\s+", " ", str(kw or "")).strip()
+        if not kw or not ARABIC_RE.search(kw):
+            continue
+        if len(kw.split()) > 2 or len(kw) > 32:
+            continue
+        key = kw.casefold()
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(kw)
+    return out
 
 
 def build_url(keyword: str, country: str) -> str:
-    # Meta receives the 14-day cutoff in the search URL first.
-    # V4 still parses every visible card and independently rejects anything < MIN_DAYS.
+    # Meta gets the 14-day cutoff first; V4 still checks card age itself.
     cutoff = (v4.utcnow() - timedelta(days=v4.MIN_DAYS)).date().isoformat()
     return (
         "https://www.facebook.com/ads/library/?"
         "active_status=active&ad_type=all&"
         f"country={country}&is_targeted_country=false&media_type=video&"
-        f"q={quote_plus(keyword)}&search_type=keyword_unordered&locale=en_US&"
+        f"q={quote_plus(keyword)}&search_type=keyword_unordered&locale=ar_AR&"
         f"start_date%5Bmax%5D={cutoff}&"
         "sort_data%5Bmode%5D=total_impressions&"
         "sort_data%5Bdirection%5D=desc"
@@ -83,12 +97,29 @@ def build_url(keyword: str, country: str) -> str:
 
 
 def external_final_url(url: str) -> str:
-    """Return only a real external landing URL."""
+    """Return a real external destination URL and reject Meta/internal/DZ links."""
     try:
-        url = str(url or "").strip()
-        if not url.startswith(("http://", "https://")):
+        current = str(url or "").strip()
+        if not current.startswith(("http://", "https://")):
             return ""
-        p = urlparse(url)
+
+        # Unwrap Meta outbound redirects without needing the destination page to load.
+        for _ in range(3):
+            p = urlparse(current)
+            host = p.netloc.lower().split(":")[0]
+            if host in {"l.facebook.com", "lm.facebook.com"}:
+                qs = parse_qs(p.query)
+                target = ""
+                for key in ("u", "url", "href", "target"):
+                    if qs.get(key):
+                        target = unquote(qs[key][0])
+                        break
+                if target:
+                    current = target
+                    continue
+            break
+
+        p = urlparse(current)
         host = p.netloc.lower().split(":")[0]
         if not host:
             return ""
@@ -97,9 +128,18 @@ def external_final_url(url: str) -> str:
             return ""
         if host.endswith(".dz"):
             return ""
-        return url
+        return current
     except Exception:
         return ""
+
+
+def cta_score(label: str) -> int:
+    low = re.sub(r"\s+", " ", str(label or "")).strip().casefold()
+    if any(x in low for x in SALES_CTA):
+        return 120
+    if any(x in low for x in SOFT_CTA):
+        return 35
+    return 0
 
 
 def rank_card_links(card: dict):
@@ -108,7 +148,6 @@ def rank_card_links(card: dict):
     for link in card.get("links") or []:
         link = link or {}
         label = re.sub(r"\s+", " ", str(link.get("text") or "")).strip()
-        low_label = label.casefold()
         for raw in (link.get("lynx"), link.get("href"), link.get("rawHref")):
             raw = str(raw or "").strip()
             if not raw.startswith(("http://", "https://")):
@@ -116,60 +155,96 @@ def rank_card_links(card: dict):
             if raw in seen:
                 continue
             seen.add(raw)
-            score = 0
-            if any(hint in low_label for hint in CTA_HINTS):
-                score += 50
+
+            score = cta_score(label)
             low = raw.casefold()
             if "l.facebook.com" in low or "lm.facebook.com" in low:
-                score += 35  # likely Meta outbound redirect
+                score += 45
             if "facebook.com/ads/library" in low:
-                score -= 100
+                score -= 200
             if "facebook.com" not in low:
-                score += 20
+                score += 25
             ranked.append((score, raw, label))
+
     ranked.sort(key=lambda x: x[0], reverse=True)
     return ranked
 
 
 def verify_landing_in_new_tab(page, card: dict) -> tuple[str, str]:
     """
-    Open candidate CTA links in a real browser tab, follow redirects, and copy
-    the final URL from the browser. A winner is not allowed through without it.
+    Landing URL is mandatory.
+    1) Prefer sales CTA links.
+    2) Open in a real tab and follow normal redirects.
+    3) Capture the final/attempted external navigation URL even if the site itself
+       fails to render, is geo-blocked, or times out.
+    4) Do not bypass CAPTCHA, login walls, or anti-bot challenges.
     """
-    for _score, candidate, label in rank_card_links(card)[:5]:
+    for _score, candidate, label in rank_card_links(card)[:8]:
+        # First try to unwrap a Meta redirect immediately.
+        direct = external_final_url(candidate)
+        if direct:
+            # Still open it in a real tab so redirects can improve the URL.
+            fallback_url = direct
+        else:
+            fallback_url = ""
+
         tab = None
+        attempted_external = []
         try:
             tab = page.context.new_page()
-            print(f"    ↗ VERIFY LANDING | {label[:45] or 'link'}", flush=True)
+
+            def on_request(req):
+                try:
+                    if req.is_navigation_request():
+                        u = external_final_url(req.url)
+                        if u:
+                            attempted_external.append(u)
+                except Exception:
+                    pass
+
+            tab.on("request", on_request)
+            print(f"    ↗ VERIFY SALES CTA | {label[:55] or 'link'}", flush=True)
+
             try:
-                tab.goto(candidate, wait_until="domcontentloaded", timeout=25000)
+                tab.goto(candidate, wait_until="domcontentloaded", timeout=30000)
             except Exception:
-                # Some stores keep loading forever; the address bar can still be final.
+                # Timeout/403/geo block is acceptable for URL capture; no bypass.
                 pass
+
             try:
-                tab.wait_for_timeout(1800)
+                tab.wait_for_timeout(2200)
             except Exception:
                 pass
 
             final_url = external_final_url(tab.url)
             if final_url:
-                print(f"    ✅ LANDING VERIFIED | {final_url[:120]}", flush=True)
-                return final_url, "Browser verified"
+                print(f"    ✅ LANDING VERIFIED | {final_url[:140]}", flush=True)
+                return final_url, "Browser final URL"
 
-            # Sometimes the redirect page exposes the destination as a visible external anchor.
+            if attempted_external:
+                final_url = attempted_external[-1]
+                print(f"    ✅ LANDING CAPTURED | {final_url[:140]}", flush=True)
+                return final_url, "Browser navigation captured"
+
+            if fallback_url:
+                print(f"    ✅ LANDING EXTRACTED | {fallback_url[:140]}", flush=True)
+                return fallback_url, "Meta redirect extracted"
+
+            # Last public-page fallback: visible outbound anchors only.
             try:
                 links = tab.locator("a[href]").evaluate_all(
-                    "els => els.map(a => a.href).filter(Boolean).slice(0, 50)"
+                    "els => els.map(a => a.href).filter(Boolean).slice(0, 80)"
                 )
                 for href in links:
                     final_url = external_final_url(href)
                     if final_url:
-                        print(f"    ✅ LANDING VERIFIED | {final_url[:120]}", flush=True)
-                        return final_url, "Browser verified"
+                        print(f"    ✅ LANDING FOUND | {final_url[:140]}", flush=True)
+                        return final_url, "Visible outbound link"
             except Exception:
                 pass
+
         except Exception as exc:
-            print(f"    LANDING VERIFY WARNING | {str(exc)[:100]}", flush=True)
+            print(f"    LANDING VERIFY WARNING | {str(exc)[:120]}", flush=True)
         finally:
             if tab is not None:
                 try:
@@ -214,11 +289,14 @@ v4.choose_product_url = choose_verified_product_url
 if __name__ == "__main__":
     cutoff = (v4.utcnow() - timedelta(days=v4.MIN_DAYS)).date().isoformat()
     print("============================================================", flush=True)
-    print("WINNING PRODUCTS SCANNER V5", flush=True)
+    print("WINNING PRODUCTS SCANNER V5 — ARAB MARKETS", flush=True)
+    print("MARKETS: ARAB COUNTRIES ONLY — DZ EXCLUDED", flush=True)
+    print("SEARCH TERMS: ARABIC 1-WORD / 2-WORD ONLY", flush=True)
+    print("CTA PRIORITY: SHOP NOW / BUY NOW / ORDER NOW / اشتري / اطلب / تسوق", flush=True)
     print("META FILTER: ACTIVE + VIDEO + STARTED ON/BEFORE 14-DAY CUTOFF", flush=True)
     print(f"14-DAY CUTOFF: {cutoff}", flush=True)
     print("SORT: TOTAL IMPRESSIONS DESC", flush=True)
-    print("LANDING URL: MANDATORY + VERIFIED IN A NEW BROWSER TAB", flush=True)
-    print("SECOND CHECK: every card is parsed and <14 days is rejected", flush=True)
+    print("LANDING URL: MANDATORY — OPENED/CAPTURED FROM REAL BROWSER NAVIGATION", flush=True)
+    print("NO CAPTCHA / LOGIN / ANTI-BOT BYPASS", flush=True)
     print("============================================================", flush=True)
     v4.main()
