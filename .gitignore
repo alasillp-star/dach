@@ -1,5 +1,6 @@
 data/facebook_cookies.json
 facebook_scanner_profile/
 anonymous_meta_profile/
+anonymous_meta_profile_v6/
 __pycache__/
 *.pyc
