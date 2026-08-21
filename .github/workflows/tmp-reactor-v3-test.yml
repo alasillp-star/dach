@@ -34,13 +34,14 @@ jobs:
       - name: Install and launch in Android emulator
         uses: ReactiveCircus/android-emulator-runner@v2
         with:
-          api-level: 35
+          api-level: 33
           arch: x86_64
           profile: pixel_6
           disable-animations: true
           script: |
             adb install -r impossible-reactor/app/build/outputs/apk/debug/app-debug.apk
             adb shell am force-stop com.oryx.impossiblereactor
+            adb logcat -c
             adb shell am start -W -n com.oryx.impossiblereactor/.MainActivity
             sleep 4
             PID=$(adb shell pidof com.oryx.impossiblereactor | tr -d '\r')
