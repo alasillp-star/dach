@@ -5,11 +5,11 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.oryx.impossiblereactor"
+        applicationId = "com.oryx.impossiblereactor.fixed"
         minSdk = 24
         targetSdk = 35
-        versionCode = 3
-        versionName = "3.0"
+        versionCode = 1
+        versionName = "3.1-fixed"
     }
 
     buildTypes {
