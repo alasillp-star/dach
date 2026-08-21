@@ -2,26 +2,21 @@ package com.oryx.impossiblereactor;
 
 import android.app.Activity;
 import android.content.Context;
-import android.graphics.BlurMaskFilter;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.LinearGradient;
 import android.graphics.Paint;
-import android.graphics.Path;
 import android.graphics.RadialGradient;
 import android.graphics.RectF;
 import android.graphics.Shader;
-import android.media.AudioManager;
-import android.media.ToneGenerator;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
+import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.Window;
-import android.view.WindowInsets;
-import android.view.WindowInsetsController;
 import android.view.WindowManager;
 
 import java.util.ArrayList;
@@ -29,546 +24,469 @@ import java.util.Iterator;
 import java.util.Random;
 
 public class MainActivity extends Activity {
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        requestWindowFeature(Window.FEATURE_NO_TITLE);
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        if (Build.VERSION.SDK_INT >= 30) {
-            WindowInsetsController controller = getWindow().getInsetsController();
-            if (controller != null) controller.hide(WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
-        } else {
-            getWindow().getDecorView().setSystemUiVisibility(
-                    View.SYSTEM_UI_FLAG_FULLSCREEN |
-                    View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
-                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
-        }
+        try { requestWindowFeature(Window.FEATURE_NO_TITLE); } catch (Throwable ignored) {}
+        try { getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN); } catch (Throwable ignored) {}
+        safeImmersive();
         setContentView(new ReactorView(this));
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        if (Build.VERSION.SDK_INT < 30) {
+        safeImmersive();
+    }
+
+    private void safeImmersive() {
+        try {
             getWindow().getDecorView().setSystemUiVisibility(
                     View.SYSTEM_UI_FLAG_FULLSCREEN |
                     View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
-                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
-        }
+                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY |
+                    View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN |
+                    View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION |
+                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+            );
+        } catch (Throwable ignored) {}
     }
 
-    static class ReactorView extends View {
+    public static final class ReactorView extends View {
         private static final int MENU = 0;
-        private static final int PLAYING = 1;
-        private static final int CRASHED = 2;
+        private static final int PLAY = 1;
+        private static final int DEAD = 2;
 
         private final Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
-        private final Paint glow = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final Random rng = new Random();
         private final ArrayList<Particle> particles = new ArrayList<>();
-        private final ArrayList<Floater> floaters = new ArrayList<>();
-        private final ToneGenerator tone = new ToneGenerator(AudioManager.STREAM_MUSIC, 42);
+        private final ArrayList<FloatingText> texts = new ArrayList<>();
         private final Vibrator vibrator;
 
         private int state = MENU;
         private int w, h;
         private float cx, cy;
         private long lastNs;
-        private float t;
-        private float shake;
-        private float flash;
+        private float time;
+        private float ringA;
+        private float ringB;
+        private float pulse;
         private float progress;
-        private float stability = 100f;
+        private float energy = 100f;
         private int combo;
-        private int taps;
         private int bestCombo;
-        private int runNumber;
-        private float pulsePhase;
-        private float ringRotation;
-        private float ringRotation2;
-        private float sabotageAt;
-        private float elapsed;
-        private String crashReason = "";
-        private String status = "SYNC READY";
-        private float statusAlpha = 1f;
-        private float menuPulse;
-        private boolean soundOn = true;
+        private int run;
+        private float flash;
+        private float shake;
+        private float targetFail;
+        private String status = "READY";
+        private String failReason = "";
 
-        private final String[] sabotageReasons = {
-                "PHASE SHIFT DETECTED",
+        private final String[] failures = {
+                "PHASE COLLAPSE",
                 "CORE REJECTED",
                 "TIME DESYNC",
-                "SIGNAL SPOOFED",
-                "QUANTUM LOCK FAILED",
-                "OVERRIDE: ACCESS DENIED"
+                "SIGNAL CORRUPTED",
+                "LOCK FAILED",
+                "ACCESS DENIED"
         };
 
         ReactorView(Context context) {
             super(context);
-            setLayerType(View.LAYER_TYPE_SOFTWARE, null);
-            vibrator = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
-            p.setTypeface(android.graphics.Typeface.create("sans", android.graphics.Typeface.NORMAL));
-            glow.setMaskFilter(new BlurMaskFilter(24f, BlurMaskFilter.Blur.NORMAL));
             setBackgroundColor(Color.rgb(3, 6, 18));
+            setFocusable(true);
+            setClickable(true);
+            Vibrator vib = null;
+            try { vib = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE); } catch (Throwable ignored) {}
+            vibrator = vib;
         }
 
         @Override
         protected void onSizeChanged(int width, int height, int oldw, int oldh) {
-            w = width;
-            h = height;
-            cx = w / 2f;
-            cy = h * 0.49f;
+            w = Math.max(1, width);
+            h = Math.max(1, height);
+            cx = w * 0.5f;
+            cy = h * 0.50f;
         }
 
         @Override
-        protected void onDraw(Canvas canvas) {
-            super.onDraw(canvas);
+        protected void onDraw(Canvas c) {
             long now = System.nanoTime();
-            float dt = lastNs == 0 ? 0.016f : Math.min(0.033f, (now - lastNs) / 1_000_000_000f);
+            float dt = lastNs == 0 ? 0.016f : Math.min(0.033f, Math.max(0.001f, (now - lastNs) / 1_000_000_000f));
             lastNs = now;
             update(dt);
 
-            canvas.save();
+            c.save();
             if (shake > 0.2f) {
-                canvas.translate((rng.nextFloat() - .5f) * shake, (rng.nextFloat() - .5f) * shake);
+                c.translate((rng.nextFloat() - .5f) * shake, (rng.nextFloat() - .5f) * shake);
             }
-
-            drawBackground(canvas);
-            if (state == MENU) drawMenu(canvas);
+            drawBackground(c);
+            if (state == MENU) drawMenu(c);
             else {
-                drawHud(canvas);
-                drawReactor(canvas);
-                drawParticles(canvas);
-                drawFloaters(canvas);
-                if (state == CRASHED) drawCrashOverlay(canvas);
+                drawHud(c);
+                drawReactor(c);
+                drawParticles(c);
+                drawTexts(c);
+                if (state == DEAD) drawDead(c);
             }
+            c.restore();
 
-            canvas.restore();
             if (flash > 0.01f) {
+                p.setShader(null);
                 p.setStyle(Paint.Style.FILL);
-                p.setColor(Color.argb((int)(Math.min(1f, flash) * 190), 255, 70, 105));
-                canvas.drawRect(0, 0, w, h, p);
+                p.setColor(Color.argb((int)(Math.min(1f, flash) * 170), 255, 50, 90));
+                c.drawRect(0, 0, w, h, p);
             }
 
             postInvalidateOnAnimation();
         }
 
         private void update(float dt) {
-            t += dt;
-            menuPulse += dt;
-            ringRotation += dt * (state == PLAYING ? 45f + taps * 0.35f : 14f);
-            ringRotation2 -= dt * (state == PLAYING ? 68f + taps * 0.5f : 20f);
-            pulsePhase += dt * (state == PLAYING ? 1.55f + taps * .018f : .7f);
-            if (pulsePhase > 1f) pulsePhase -= 1f;
-            shake *= (float)Math.pow(0.018, dt);
-            flash *= (float)Math.pow(0.012, dt);
-            statusAlpha = Math.max(0.35f, statusAlpha - dt * 0.55f);
+            time += dt;
+            ringA = (ringA + dt * (state == PLAY ? 62f + combo * 2.2f : 18f)) % 360f;
+            ringB = (ringB - dt * (state == PLAY ? 94f + combo * 2.8f : 27f)) % 360f;
+            pulse += dt * (state == PLAY ? 1.32f + combo * .025f : .55f);
+            if (pulse > 1f) pulse -= 1f;
+            flash *= (float)Math.pow(0.02, dt);
+            shake *= (float)Math.pow(0.025, dt);
 
-            if (state == PLAYING) {
-                elapsed += dt;
-                stability -= dt * (1.05f + taps * .018f);
-                if (stability <= 0f) crash("CORE DECAY");
+            if (state == PLAY) {
+                energy -= dt * (1.25f + combo * .025f);
+                if (energy <= 0f) fail("CORE DECAY");
             }
 
             Iterator<Particle> it = particles.iterator();
             while (it.hasNext()) {
                 Particle q = it.next();
                 q.life -= dt;
-                if (q.life <= 0) it.remove();
-                else {
-                    q.x += q.vx * dt;
-                    q.y += q.vy * dt;
-                    q.vx *= Math.pow(.07, dt);
-                    q.vy *= Math.pow(.07, dt);
-                    q.vy += 35f * dt;
-                }
+                if (q.life <= 0) { it.remove(); continue; }
+                q.x += q.vx * dt;
+                q.y += q.vy * dt;
+                q.vx *= 0.985f;
+                q.vy *= 0.985f;
             }
 
-            Iterator<Floater> fit = floaters.iterator();
-            while (fit.hasNext()) {
-                Floater f = fit.next();
+            Iterator<FloatingText> ft = texts.iterator();
+            while (ft.hasNext()) {
+                FloatingText f = ft.next();
                 f.life -= dt;
-                f.y -= 42f * dt;
-                if (f.life <= 0) fit.remove();
+                f.y -= 55f * dt;
+                if (f.life <= 0) ft.remove();
             }
         }
 
         private void drawBackground(Canvas c) {
             p.setStyle(Paint.Style.FILL);
             p.setShader(new LinearGradient(0, 0, 0, h,
-                    Color.rgb(4, 8, 27), Color.rgb(2, 4, 13), Shader.TileMode.CLAMP));
+                    Color.rgb(6, 10, 35), Color.rgb(1, 3, 12), Shader.TileMode.CLAMP));
             c.drawRect(0, 0, w, h, p);
             p.setShader(null);
 
-            float drift = (t * 26f) % 70f;
             p.setStrokeWidth(1f);
-            p.setColor(Color.argb(28, 74, 220, 255));
-            for (float y = -70 + drift; y < h + 70; y += 70) c.drawLine(0, y, w, y, p);
-            for (float x = 0; x < w; x += 70) c.drawLine(x, 0, x, h, p);
+            p.setColor(Color.argb(28, 61, 214, 255));
+            float grid = Math.max(54f, Math.min(w, h) / 8f);
+            float drift = (time * 18f) % grid;
+            for (float y = -grid + drift; y < h + grid; y += grid) c.drawLine(0, y, w, y, p);
+            for (float x = 0; x < w; x += grid) c.drawLine(x, 0, x, h, p);
 
-            p.setColor(Color.argb(18, 255, 255, 255));
-            for (int i = 0; i < 22; i++) {
-                float yy = (i * 97f + t * (7 + i % 4)) % h;
-                float xx = (i * 173f) % w;
-                c.drawCircle(xx, yy, 1.4f + (i % 3), p);
+            for (int i = 0; i < 24; i++) {
+                float sx = (i * 173f) % w;
+                float sy = (i * 101f + time * (8f + i % 5)) % h;
+                p.setStyle(Paint.Style.FILL);
+                p.setColor(Color.argb(25 + (i % 4) * 8, 160, 235, 255));
+                c.drawCircle(sx, sy, 1.2f + (i % 3), p);
             }
-
-            p.setStyle(Paint.Style.STROKE);
-            p.setStrokeWidth(2f);
-            p.setColor(Color.argb(30, 70, 246, 255));
-            float r = Math.min(w, h) * .53f;
-            c.drawCircle(cx, cy, r, p);
         }
 
         private void drawMenu(Canvas c) {
-            float pulse = 1f + .035f * (float)Math.sin(menuPulse * 3.2f);
-            float logoR = Math.min(w, h) * .14f * pulse;
+            float base = Math.min(w, h) * .13f;
+            float r = base * (1f + .04f * (float)Math.sin(time * 3f));
 
-            glow.setStyle(Paint.Style.FILL);
-            glow.setColor(Color.argb(90, 66, 240, 255));
-            c.drawCircle(cx, h * .35f, logoR * 1.2f, glow);
-
-            p.setShader(new RadialGradient(cx, h*.35f, logoR,
-                    new int[]{Color.rgb(240,255,255), Color.rgb(44,225,255), Color.rgb(14,48,95)},
-                    null, Shader.TileMode.CLAMP));
             p.setStyle(Paint.Style.FILL);
-            c.drawCircle(cx, h * .35f, logoR, p);
+            p.setShader(new RadialGradient(cx, h * .34f, r * 1.8f,
+                    new int[]{Color.argb(145, 72, 245, 255), Color.argb(45, 70, 100, 255), Color.TRANSPARENT},
+                    null, Shader.TileMode.CLAMP));
+            c.drawCircle(cx, h * .34f, r * 1.8f, p);
+            p.setShader(null);
+
+            p.setShader(new RadialGradient(cx, h * .34f, r,
+                    new int[]{Color.WHITE, Color.rgb(85, 245, 255), Color.rgb(30, 75, 160)},
+                    null, Shader.TileMode.CLAMP));
+            c.drawCircle(cx, h * .34f, r, p);
             p.setShader(null);
 
             p.setStyle(Paint.Style.STROKE);
             p.setStrokeWidth(5f);
-            p.setColor(Color.argb(210, 112, 246, 255));
-            RectF rr = new RectF(cx-logoR*1.45f, h*.35f-logoR*1.45f, cx+logoR*1.45f, h*.35f+logoR*1.45f);
-            c.drawArc(rr, ringRotation, 122, false, p);
-            c.drawArc(rr, ringRotation+180, 72, false, p);
+            p.setColor(Color.rgb(110, 240, 255));
+            RectF rr = new RectF(cx-r*1.45f, h*.34f-r*1.45f, cx+r*1.45f, h*.34f+r*1.45f);
+            c.drawArc(rr, ringA, 120, false, p);
+            c.drawArc(rr, ringA+180, 65, false, p);
 
-            drawText(c, "IMPOSSIBLE", cx, h*.56f, 20, Color.rgb(106,243,255), Paint.Align.CENTER, false);
-            drawText(c, "REACTOR", cx, h*.615f, 45, Color.WHITE, Paint.Align.CENTER, true);
-            drawText(c, "ثبّت النواة عند 100%", cx, h*.68f, 18, Color.rgb(187,201,220), Paint.Align.CENTER, false);
+            text(c, "IMPOSSIBLE", cx, h*.55f, 18, Color.rgb(101, 238, 255), Paint.Align.CENTER, true);
+            text(c, "REACTOR", cx, h*.61f, 42, Color.WHITE, Paint.Align.CENTER, true);
+            text(c, "ثبت النواة عند 100%", cx, h*.67f, 17, Color.rgb(187, 202, 226), Paint.Align.CENTER, false);
 
-            float bw = w * .68f;
-            float bh = 72f;
-            float left = cx - bw/2f;
-            float top = h*.77f;
-            RectF button = new RectF(left, top, left+bw, top+bh);
+            float bw = w*.70f, bh = Math.max(62f, h*.065f);
+            RectF b = new RectF(cx-bw/2f, h*.76f, cx+bw/2f, h*.76f+bh);
             p.setStyle(Paint.Style.FILL);
-            p.setColor(Color.argb(34, 93, 240, 255));
-            c.drawRoundRect(button, 22, 22, p);
+            p.setColor(Color.argb(60, 60, 220, 255));
+            c.drawRoundRect(b, 24, 24, p);
             p.setStyle(Paint.Style.STROKE);
             p.setStrokeWidth(2.5f);
-            p.setColor(Color.rgb(92, 238, 255));
-            c.drawRoundRect(button, 22, 22, p);
-            drawText(c, "ابدأ التجربة", cx, top+46, 20, Color.WHITE, Paint.Align.CENTER, true);
-            drawText(c, "اضغط عندما تلتقي الحلقة بالمنطقة المضيئة", cx, h*.9f, 13, Color.rgb(116,137,168), Paint.Align.CENTER, false);
+            p.setColor(Color.rgb(90, 238, 255));
+            c.drawRoundRect(b, 24, 24, p);
+            text(c, "ابدأ التجربة", cx, b.centerY()+7, 19, Color.WHITE, Paint.Align.CENTER, true);
+            text(c, "اضغط عندما تلتقي النبضة مع الحلقة", cx, h*.90f, 13, Color.rgb(117, 139, 171), Paint.Align.CENTER, false);
         }
 
         private void drawHud(Canvas c) {
-            drawText(c, "IMPOSSIBLE REACTOR", 28, 44, 13, Color.rgb(104, 236, 255), Paint.Align.LEFT, true);
-            drawText(c, String.format("RUN %02d", runNumber), w-28, 44, 13, Color.rgb(137,152,180), Paint.Align.RIGHT, true);
+            text(c, "IMPOSSIBLE REACTOR", 26, 42, 12, Color.rgb(100, 235, 255), Paint.Align.LEFT, true);
+            text(c, "RUN " + run, w-26, 42, 12, Color.rgb(140, 153, 180), Paint.Align.RIGHT, true);
 
-            float left = 28, top = 72, barW = w - 56, barH = 12;
+            float l = 26, top = 70, bw = w-52, bh = 12;
             p.setStyle(Paint.Style.FILL);
-            p.setColor(Color.rgb(20, 28, 49));
-            c.drawRoundRect(new RectF(left, top, left+barW, top+barH), 8, 8, p);
-            float prog = Math.max(0, Math.min(99.4f, progress));
-            if (prog > 0) {
-                p.setShader(new LinearGradient(left, 0, left+barW, 0,
-                        Color.rgb(48, 227, 255), Color.rgb(179, 72, 255), Shader.TileMode.CLAMP));
-                c.drawRoundRect(new RectF(left, top, left+barW*(prog/100f), top+barH), 8, 8, p);
+            p.setColor(Color.rgb(18, 27, 50));
+            c.drawRoundRect(new RectF(l, top, l+bw, top+bh), 8, 8, p);
+            float shown = Math.max(0, Math.min(99.4f, progress));
+            if (shown > 0) {
+                p.setShader(new LinearGradient(l, 0, l+bw, 0,
+                        Color.rgb(53, 230, 255), Color.rgb(178, 75, 255), Shader.TileMode.CLAMP));
+                c.drawRoundRect(new RectF(l, top, l+bw*(shown/100f), top+bh), 8, 8, p);
                 p.setShader(null);
             }
-            drawText(c, String.format("STABILIZATION  %.1f%%", prog), left, top+35, 12, Color.rgb(190,205,230), Paint.Align.LEFT, true);
+            text(c, String.format("STABILITY %.1f%%", shown), l, top+35, 12, Color.rgb(190, 204, 229), Paint.Align.LEFT, true);
+            int ec = energy > 55 ? Color.rgb(100, 245, 210) : energy > 25 ? Color.rgb(255, 190, 80) : Color.rgb(255, 76, 108);
+            text(c, "CORE " + Math.max(0, (int)energy), w-26, top+35, 12, ec, Paint.Align.RIGHT, true);
 
-            int stabColor = stability > 55 ? Color.rgb(99, 244, 205) : (stability > 25 ? Color.rgb(255, 190, 75) : Color.rgb(255, 79, 102));
-            drawText(c, String.format("CORE %03d", (int)Math.max(0, stability)), w-28, top+35, 12, stabColor, Paint.Align.RIGHT, true);
-
-            drawText(c, "COMBO", 28, h-68, 11, Color.rgb(120,137,166), Paint.Align.LEFT, true);
-            drawText(c, "x" + combo, 28, h-36, 28, Color.WHITE, Paint.Align.LEFT, true);
-            drawText(c, status, w-28, h-42, 15, withAlpha(Color.rgb(108,238,255), statusAlpha), Paint.Align.RIGHT, true);
+            text(c, "COMBO", 26, h-72, 11, Color.rgb(117, 135, 166), Paint.Align.LEFT, true);
+            text(c, "x"+combo, 26, h-38, 28, Color.WHITE, Paint.Align.LEFT, true);
+            text(c, status, w-26, h-43, 14, Color.rgb(105, 232, 255), Paint.Align.RIGHT, true);
         }
 
         private void drawReactor(Canvas c) {
-            float baseR = Math.min(w, h) * .132f;
-            float targetR = baseR * 1.72f;
-            float pulseR = baseR * (.73f + pulsePhase * 1.62f);
+            float core = Math.min(w, h) * .13f;
+            float target = core * 1.75f;
+            float pulseR = core * (.72f + pulse * 1.66f);
 
-            // outer ambient glow
-            glow.setColor(Color.argb(40, 76, 224, 255));
-            glow.setStyle(Paint.Style.STROKE);
-            glow.setStrokeWidth(22f);
-            c.drawCircle(cx, cy, targetR, glow);
-
-            // target sync band
             p.setStyle(Paint.Style.STROKE);
-            p.setStrokeWidth(18f);
-            p.setColor(Color.argb(30, 94, 240, 255));
-            c.drawCircle(cx, cy, targetR, p);
-            p.setStrokeWidth(4f);
-            p.setColor(Color.argb(210, 104, 246, 255));
-            RectF tr = new RectF(cx-targetR, cy-targetR, cx+targetR, cy+targetR);
-            c.drawArc(tr, ringRotation, 74, false, p);
-            c.drawArc(tr, ringRotation+114, 42, false, p);
-            c.drawArc(tr, ringRotation+238, 66, false, p);
+            p.setStrokeWidth(20f);
+            p.setColor(Color.argb(28, 75, 223, 255));
+            c.drawCircle(cx, cy, target, p);
 
-            // mechanical ring 1
-            float r2 = baseR * 2.18f;
+            RectF tr = new RectF(cx-target, cy-target, cx+target, cy+target);
+            p.setStrokeWidth(5f);
+            p.setColor(Color.rgb(108, 239, 255));
+            c.drawArc(tr, ringA, 72, false, p);
+            c.drawArc(tr, ringA+118, 44, false, p);
+            c.drawArc(tr, ringA+238, 68, false, p);
+
+            float r2 = core*2.18f;
+            RectF r2f = new RectF(cx-r2,cy-r2,cx+r2,cy+r2);
             p.setStrokeWidth(3f);
-            p.setColor(Color.argb(110, 104, 120, 164));
-            RectF a = new RectF(cx-r2, cy-r2, cx+r2, cy+r2);
-            for (int i=0;i<6;i++) c.drawArc(a, ringRotation2+i*60, 27, false, p);
+            p.setColor(Color.argb(110, 126, 137, 177));
+            for (int i=0;i<6;i++) c.drawArc(r2f, ringB+i*60f, 27f, false, p);
 
-            // mechanical ring 2 nodes
-            float r3 = baseR * 2.55f;
-            p.setColor(Color.argb(75, 86, 201, 255));
+            float r3 = core*2.55f;
             p.setStrokeWidth(2f);
-            c.drawCircle(cx, cy, r3, p);
+            p.setColor(Color.argb(80, 78, 210, 255));
+            c.drawCircle(cx,cy,r3,p);
+            p.setStyle(Paint.Style.FILL);
             for (int i=0;i<8;i++) {
-                double ang = Math.toRadians(ringRotation+i*45);
-                float nx = cx + (float)Math.cos(ang)*r3;
-                float ny = cy + (float)Math.sin(ang)*r3;
-                p.setStyle(Paint.Style.FILL);
-                p.setColor(Color.rgb(72, 213, 255));
-                c.drawCircle(nx, ny, 4f, p);
+                double a = Math.toRadians(ringA + i*45f);
+                c.drawCircle(cx+(float)Math.cos(a)*r3, cy+(float)Math.sin(a)*r3, 4f, p);
             }
 
-            // moving timing pulse
-            glow.setStyle(Paint.Style.STROKE);
-            glow.setStrokeWidth(13f);
-            glow.setColor(Color.argb((int)(140*(1f-pulsePhase*.45f)), 197, 87, 255));
-            c.drawCircle(cx, cy, pulseR, glow);
             p.setStyle(Paint.Style.STROKE);
-            p.setStrokeWidth(4f);
-            p.setColor(Color.rgb(224, 156, 255));
+            p.setStrokeWidth(5f);
+            p.setColor(Color.rgb(225, 160, 255));
             c.drawCircle(cx, cy, pulseR, p);
 
-            // core glow
-            float breathing = 1f + .05f*(float)Math.sin(t*7.2f);
-            glow.setStyle(Paint.Style.FILL);
-            glow.setColor(Color.argb(125, 74, 230, 255));
-            c.drawCircle(cx, cy, baseR*1.05f*breathing, glow);
-
-            p.setShader(new RadialGradient(cx, cy, baseR,
-                    new int[]{Color.WHITE, Color.rgb(82, 237, 255), Color.rgb(51, 104, 196), Color.rgb(20, 29, 72)},
-                    new float[]{0f,.18f,.58f,1f}, Shader.TileMode.CLAMP));
             p.setStyle(Paint.Style.FILL);
-            c.drawCircle(cx, cy, baseR*breathing, p);
+            p.setShader(new RadialGradient(cx,cy,core*1.5f,
+                    new int[]{Color.argb(160,90,240,255), Color.argb(65,70,120,255), Color.TRANSPARENT},
+                    null, Shader.TileMode.CLAMP));
+            c.drawCircle(cx,cy,core*1.5f,p);
             p.setShader(null);
 
-            // core cut lines
-            p.setStyle(Paint.Style.STROKE);
-            p.setStrokeWidth(2f);
-            p.setColor(Color.argb(150, 255,255,255));
-            for (int i=0;i<4;i++) {
-                float rr = baseR*(.42f+i*.15f);
-                c.drawCircle(cx,cy,rr,p);
-            }
+            p.setShader(new RadialGradient(cx,cy,core,
+                    new int[]{Color.WHITE, Color.rgb(80,235,255), Color.rgb(39,95,200), Color.rgb(12,21,64)},
+                    new float[]{0f,.18f,.62f,1f}, Shader.TileMode.CLAMP));
+            c.drawCircle(cx,cy,core,p);
+            p.setShader(null);
 
-            drawText(c, String.format("%.0f%%", Math.min(99f, progress)), cx, cy+8, 27, Color.rgb(3,16,34), Paint.Align.CENTER, true);
-            drawText(c, "TAP ON SYNC", cx, cy + baseR*3.25f, 13, Color.rgb(146,164,195), Paint.Align.CENTER, true);
+            text(c, String.format("%.0f%%", Math.min(99f, progress)), cx, cy+8, 26, Color.rgb(5,18,38), Paint.Align.CENTER, true);
+            text(c, "TAP ON SYNC", cx, cy+core*3.25f, 12, Color.rgb(145,163,193), Paint.Align.CENTER, true);
         }
 
         private void drawParticles(Canvas c) {
+            p.setShader(null);
             p.setStyle(Paint.Style.FILL);
             for (Particle q : particles) {
-                float a = Math.max(0, Math.min(1, q.life / q.maxLife));
-                p.setColor(withAlpha(q.color, a));
-                c.drawCircle(q.x, q.y, q.size * (.35f + a), p);
+                float a = Math.max(0f, Math.min(1f, q.life/q.maxLife));
+                p.setColor(alpha(q.color,a));
+                c.drawCircle(q.x,q.y,q.size*(.45f+a),p);
             }
         }
 
-        private void drawFloaters(Canvas c) {
-            for (Floater f : floaters) {
-                float a = Math.max(0, Math.min(1, f.life / f.maxLife));
-                drawText(c, f.text, f.x, f.y, f.size, withAlpha(f.color, a), Paint.Align.CENTER, true);
+        private void drawTexts(Canvas c) {
+            for (FloatingText f : texts) {
+                float a = Math.max(0f, Math.min(1f, f.life/f.maxLife));
+                text(c,f.s,f.x,f.y,f.size,alpha(f.color,a),Paint.Align.CENTER,true);
             }
         }
 
-        private void drawCrashOverlay(Canvas c) {
+        private void drawDead(Canvas c) {
+            p.setShader(null);
             p.setStyle(Paint.Style.FILL);
-            p.setColor(Color.argb(182, 3, 4, 14));
+            p.setColor(Color.argb(190, 2, 4, 14));
             c.drawRect(0,0,w,h,p);
-
-            float cardW = w*.84f, cardH = 310f;
-            RectF card = new RectF(cx-cardW/2f, cy-cardH/2f, cx+cardW/2f, cy+cardH/2f);
-            p.setColor(Color.argb(245, 12, 18, 36));
-            c.drawRoundRect(card, 30,30,p);
-            p.setStyle(Paint.Style.STROKE);
-            p.setStrokeWidth(2f);
-            p.setColor(Color.rgb(255,72,102));
+            float cw=w*.84f, ch=Math.min(330f,h*.42f);
+            RectF card=new RectF(cx-cw/2f,cy-ch/2f,cx+cw/2f,cy+ch/2f);
+            p.setColor(Color.rgb(11,17,36));
             c.drawRoundRect(card,30,30,p);
-
-            drawText(c, "REACTOR LOST", cx, card.top+62, 16, Color.rgb(255,88,113), Paint.Align.CENTER, true);
-            drawText(c, crashReason, cx, card.top+112, 22, Color.WHITE, Paint.Align.CENTER, true);
-            drawText(c, String.format("وصلت إلى %.1f%%", Math.min(99.4f, progress)), cx, card.top+162, 17, Color.rgb(182,197,222), Paint.Align.CENTER, false);
-            drawText(c, "BEST COMBO  x"+bestCombo, cx, card.top+204, 13, Color.rgb(108,236,255), Paint.Align.CENTER, true);
-
-            RectF retry = new RectF(card.left+38, card.bottom-70, card.right-38, card.bottom-20);
+            p.setStyle(Paint.Style.STROKE);
+            p.setStrokeWidth(2.5f);
+            p.setColor(Color.rgb(255,73,107));
+            c.drawRoundRect(card,30,30,p);
+            text(c,"REACTOR LOST",cx,card.top+58,15,Color.rgb(255,84,115),Paint.Align.CENTER,true);
+            text(c,failReason,cx,card.top+105,21,Color.WHITE,Paint.Align.CENTER,true);
+            text(c,String.format("وصلت إلى %.1f%%",Math.min(99.4f,progress)),cx,card.top+153,16,Color.rgb(184,198,222),Paint.Align.CENTER,false);
+            text(c,"BEST COMBO x"+bestCombo,cx,card.top+195,13,Color.rgb(105,235,255),Paint.Align.CENTER,true);
+            RectF retry=new RectF(card.left+36,card.bottom-69,card.right-36,card.bottom-18);
             p.setStyle(Paint.Style.FILL);
-            p.setColor(Color.rgb(28, 182, 218));
-            c.drawRoundRect(retry, 16,16,p);
-            drawText(c, "إعادة المحاولة", cx, retry.centerY()+7, 17, Color.rgb(5,13,25), Paint.Align.CENTER, true);
+            p.setColor(Color.rgb(45,205,235));
+            c.drawRoundRect(retry,16,16,p);
+            text(c,"إعادة المحاولة",cx,retry.centerY()+6,16,Color.rgb(5,15,28),Paint.Align.CENTER,true);
         }
 
         @Override
         public boolean onTouchEvent(MotionEvent e) {
-            if (e.getAction() != MotionEvent.ACTION_DOWN) return true;
-            float x = e.getX(), y = e.getY();
-            if (state == MENU) {
-                startRun();
-                return true;
-            }
-            if (state == CRASHED) {
-                startRun();
-                return true;
-            }
-            handleTap(x,y);
+            if (e.getAction()!=MotionEvent.ACTION_DOWN) return true;
+            if (state==MENU || state==DEAD) { startRun(); return true; }
+            handleTap(e.getX(),e.getY());
             return true;
         }
 
         private void startRun() {
-            state = PLAYING;
-            runNumber++;
-            progress = 0;
-            stability = 100;
-            combo = 0;
-            taps = 0;
-            elapsed = 0;
-            pulsePhase = .1f + rng.nextFloat()*.3f;
-            sabotageAt = 88.5f + rng.nextFloat()*9.2f;
-            crashReason = "";
-            status = "SYNC READY";
-            statusAlpha = 1f;
+            state=PLAY;
+            run++;
+            progress=0;
+            energy=100;
+            combo=0;
+            pulse=.08f+rng.nextFloat()*.3f;
+            targetFail=88.5f+rng.nextFloat()*10f;
+            status="SYNC READY";
+            failReason="";
             particles.clear();
-            floaters.clear();
-            burst(cx, cy, 42, Color.rgb(82,232,255), 260f);
-            beep(ToneGenerator.TONE_PROP_ACK, 90);
-            haptic(18);
+            texts.clear();
+            burst(cx,cy,45,Color.rgb(85,235,255),300f);
+            haptic(20);
         }
 
-        private void handleTap(float x, float y) {
-            taps++;
-            float baseR = Math.min(w,h)*.132f;
-            float targetR = baseR*1.72f;
-            float pulseR = baseR*(.73f+pulsePhase*1.62f);
-            float error = Math.abs(pulseR-targetR);
-            float perfectBand = baseR*.18f;
-            float goodBand = baseR*.42f;
+        private void handleTap(float x,float y) {
+            float core=Math.min(w,h)*.13f;
+            float target=core*1.75f;
+            float pulseR=core*(.72f+pulse*1.66f);
+            float err=Math.abs(pulseR-target);
+            float perfect=core*.18f;
+            float good=core*.42f;
 
-            if (error <= perfectBand) {
+            if (err<=perfect) {
                 combo++;
-                bestCombo = Math.max(bestCombo, combo);
-                float gain = 8.6f + Math.min(5.8f, combo*.38f);
-                progress += gain;
-                stability = Math.min(100, stability+3.4f);
-                status = combo >= 4 ? "PERFECT CHAIN x"+combo : "PERFECT SYNC";
-                statusAlpha = 1f;
-                floaters.add(new Floater("PERFECT +"+(int)gain, cx, cy-40, 18, Color.rgb(111,255,218)));
-                burst(cx,cy,34,Color.rgb(100,255,220),310f);
-                ringBurst(targetR, Color.rgb(100,255,220));
-                beep(ToneGenerator.TONE_PROP_BEEP2, 55);
+                bestCombo=Math.max(bestCombo,combo);
+                float gain=8.4f+Math.min(5.6f,combo*.38f);
+                progress+=gain;
+                energy=Math.min(100f,energy+3.5f);
+                status=combo>=4?"PERFECT CHAIN x"+combo:"PERFECT SYNC";
+                texts.add(new FloatingText("PERFECT +"+(int)gain,cx,cy-42,18,Color.rgb(110,255,215)));
+                burst(cx,cy,36,Color.rgb(100,255,215),340f);
+                shake=Math.max(shake,4f);
                 haptic(24);
-            } else if (error <= goodBand) {
+            } else if (err<=good) {
                 combo++;
-                bestCombo = Math.max(bestCombo,combo);
-                float gain = 4.4f + Math.min(2.5f, combo*.18f);
-                progress += gain;
-                status = "SYNC +"+(int)gain;
-                statusAlpha = 1f;
-                floaters.add(new Floater("GOOD +"+(int)gain,cx,cy-35,16,Color.rgb(106,222,255)));
-                burst(cx,cy,20,Color.rgb(83,215,255),230f);
-                beep(ToneGenerator.TONE_PROP_BEEP,45);
-                haptic(13);
+                bestCombo=Math.max(bestCombo,combo);
+                float gain=4.2f+Math.min(2.6f,combo*.18f);
+                progress+=gain;
+                status="SYNC +"+(int)gain;
+                texts.add(new FloatingText("GOOD +"+(int)gain,cx,cy-38,16,Color.rgb(105,220,255)));
+                burst(cx,cy,22,Color.rgb(82,214,255),250f);
+                haptic(14);
             } else {
                 combo=0;
-                stability-=13.5f;
-                progress=Math.max(0,progress-2.3f);
+                energy-=13.5f;
+                progress=Math.max(0,progress-2.1f);
                 status="DESYNC";
-                statusAlpha=1f;
-                shake=Math.max(shake,12f);
-                flash=.15f;
-                floaters.add(new Floater("DESYNC -2",x,y,16,Color.rgb(255,98,122)));
-                burst(x,y,18,Color.rgb(255,78,111),180f);
-                beep(ToneGenerator.TONE_PROP_NACK,80);
+                texts.add(new FloatingText("DESYNC -2",x,y,16,Color.rgb(255,90,120)));
+                burst(x,y,22,Color.rgb(255,74,108),220f);
+                flash=.16f;
+                shake=Math.max(shake,13f);
                 haptic(42);
             }
 
-            // The design intentionally has no win state. Every run is sabotaged before 100%.
-            if (progress >= sabotageAt) {
-                progress = Math.min(99.4f, Math.max(progress, 96.2f + rng.nextFloat()*3.1f));
-                crash(sabotageReasons[rng.nextInt(sabotageReasons.length)]);
-            } else if (stability <= 0) {
-                crash("CORE COLLAPSE");
+            // No win path exists. Every run is deliberately stopped before 100%.
+            if (progress>=targetFail) {
+                progress=Math.min(99.4f,Math.max(progress,96.1f+rng.nextFloat()*3.2f));
+                fail(failures[rng.nextInt(failures.length)]);
+            } else if (energy<=0f) {
+                fail("CORE COLLAPSE");
             }
         }
 
-        private void crash(String reason) {
-            if (state != PLAYING) return;
-            state = CRASHED;
-            crashReason = reason;
+        private void fail(String reason) {
+            if (state!=PLAY) return;
+            state=DEAD;
+            failReason=reason;
             combo=0;
-            shake=38f;
             flash=1f;
-            burst(cx,cy,120,Color.rgb(255,67,103),620f);
-            burst(cx,cy,70,Color.rgb(137,74,255),440f);
-            beep(ToneGenerator.TONE_CDMA_ABBR_ALERT, 240);
-            haptic(130);
+            shake=38f;
+            burst(cx,cy,120,Color.rgb(255,66,101),650f);
+            burst(cx,cy,70,Color.rgb(142,75,255),470f);
+            haptic(120);
         }
 
-        private void ringBurst(float radius, int color) {
-            for (int i=0;i<18;i++) {
-                double a = Math.PI*2*i/18.0 + rng.nextFloat()*.1;
-                float x = cx+(float)Math.cos(a)*radius;
-                float y = cy+(float)Math.sin(a)*radius;
-                float speed = 80+rng.nextFloat()*120;
-                particles.add(new Particle(x,y,(float)Math.cos(a)*speed,(float)Math.sin(a)*speed,3+rng.nextFloat()*3,.45f,color));
-            }
-        }
-
-        private void burst(float x, float y, int count, int color, float speed) {
+        private void burst(float x,float y,int count,int color,float speed) {
             for (int i=0;i<count;i++) {
-                double a = rng.nextFloat()*Math.PI*2;
-                float s = speed*(.18f+rng.nextFloat()*.82f);
-                particles.add(new Particle(x,y,(float)Math.cos(a)*s,(float)Math.sin(a)*s,2+rng.nextFloat()*5,.35f+rng.nextFloat()*.7f,color));
+                double a=rng.nextFloat()*Math.PI*2;
+                float s=speed*(.18f+rng.nextFloat()*.82f);
+                particles.add(new Particle(x,y,(float)Math.cos(a)*s,(float)Math.sin(a)*s,2f+rng.nextFloat()*5f,.35f+rng.nextFloat()*.65f,color));
             }
-        }
-
-        private void beep(int toneId, int ms) {
-            if (!soundOn) return;
-            try { tone.startTone(toneId, ms); } catch (Exception ignored) {}
         }
 
         private void haptic(long ms) {
-            if (vibrator == null || !vibrator.hasVibrator()) return;
+            try { performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP); } catch (Throwable ignored) {}
             try {
-                if (Build.VERSION.SDK_INT >= 26) vibrator.vibrate(VibrationEffect.createOneShot(ms, VibrationEffect.DEFAULT_AMPLITUDE));
+                if (vibrator==null || !vibrator.hasVibrator()) return;
+                if (Build.VERSION.SDK_INT>=26) vibrator.vibrate(VibrationEffect.createOneShot(ms,VibrationEffect.DEFAULT_AMPLITUDE));
                 else vibrator.vibrate(ms);
-            } catch (Exception ignored) {}
+            } catch (Throwable ignored) {}
         }
 
-        private void drawText(Canvas c, String s, float x, float y, float sp, int color, Paint.Align align, boolean bold) {
+        private void text(Canvas c,String s,float x,float y,float sp,int color,Paint.Align align,boolean bold) {
             p.setShader(null);
             p.setStyle(Paint.Style.FILL);
             p.setTextAlign(align);
-            p.setTextSize(sp * getResources().getDisplayMetrics().scaledDensity);
+            p.setTextSize(sp*getResources().getDisplayMetrics().scaledDensity);
             p.setColor(color);
-            p.setTypeface(android.graphics.Typeface.create("sans", bold ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL));
-            c.drawText(s, x, y, p);
+            p.setTypeface(android.graphics.Typeface.create("sans",bold?android.graphics.Typeface.BOLD:android.graphics.Typeface.NORMAL));
+            c.drawText(s,x,y,p);
         }
 
-        private int withAlpha(int color, float a) {
-            return Color.argb((int)(255*Math.max(0,Math.min(1,a))), Color.red(color), Color.green(color), Color.blue(color));
+        private int alpha(int color,float a) {
+            return Color.argb((int)(255*Math.max(0f,Math.min(1f,a))),Color.red(color),Color.green(color),Color.blue(color));
         }
 
-        static class Particle {
+        static final class Particle {
             float x,y,vx,vy,size,life,maxLife; int color;
-            Particle(float x,float y,float vx,float vy,float size,float life,int color){
-                this.x=x;this.y=y;this.vx=vx;this.vy=vy;this.size=size;this.life=life;this.maxLife=life;this.color=color;
+            Particle(float x,float y,float vx,float vy,float size,float life,int color) {
+                this.x=x; this.y=y; this.vx=vx; this.vy=vy; this.size=size; this.life=life; this.maxLife=life; this.color=color;
             }
         }
-        static class Floater {
-            String text; float x,y,size,life,maxLife; int color;
-            Floater(String text,float x,float y,float size,int color){
-                this.text=text;this.x=x;this.y=y;this.size=size;this.life=.8f;this.maxLife=.8f;this.color=color;
+
+        static final class FloatingText {
+            String s; float x,y,size,life,maxLife; int color;
+            FloatingText(String s,float x,float y,float size,int color) {
+                this.s=s; this.x=x; this.y=y; this.size=size; this.life=.85f; this.maxLife=.85f; this.color=color;
             }
         }
     }
