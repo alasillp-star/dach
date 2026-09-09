@@ -1,14 +1,14 @@
 {
-  "cursor": 1426,
+  "cursor": 1429,
   "last_run": null,
-  "total_ads": 265,
+  "total_ads": 277,
   "added_last_run": 0,
-  "attempts": 1426,
-  "last_keyword": "البايو جهاز ازالة الشعر",
-  "last_country": "EG",
-  "last_attempt": "2026-09-09T10:28:50+00:00",
-  "added_last_attempt": 0,
-  "learned_last_attempt": 0,
+  "attempts": 1429,
+  "last_keyword": "جهاز ازالة الشعر",
+  "last_country": "SA",
+  "last_attempt": "2026-09-09T10:30:00+00:00",
+  "added_last_attempt": 12,
+  "learned_last_attempt": 37,
   "errors": 4,
   "last_error": "Failed to initialize client: Failed to perform, curl: (6) Could not resolve host: www.facebook.com. See https://curl.se/libcurl/c/libcurl-errors.html first for more details."
 }
