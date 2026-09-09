@@ -1,14 +1,14 @@
 {
-  "cursor": 1161,
+  "cursor": 1166,
   "last_run": null,
   "total_ads": 99,
   "added_last_run": 0,
-  "attempts": 1161,
-  "last_keyword": "سيروم الشاي الأسود المضاد للأكسدة",
-  "last_country": "BH",
-  "last_attempt": "2026-09-09T08:16:54+00:00",
+  "attempts": 1166,
+  "last_keyword": "إسفنجة تقشير الوجه بالفحم",
+  "last_country": "MA",
+  "last_attempt": "2026-09-09T08:19:05+00:00",
   "added_last_attempt": 0,
   "learned_last_attempt": 0,
-  "errors": 2,
-  "last_error": "Failed to refresh stale session"
+  "errors": 4,
+  "last_error": "Failed to initialize client: Failed to perform, curl: (6) Could not resolve host: www.facebook.com. See https://curl.se/libcurl/c/libcurl-errors.html first for more details."
 }
