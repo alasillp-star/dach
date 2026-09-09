@@ -1,14 +1,14 @@
 {
-  "cursor": 2212,
+  "cursor": 2215,
   "last_run": null,
-  "total_ads": 1046,
+  "total_ads": 1056,
   "added_last_run": 0,
-  "attempts": 2212,
-  "last_keyword": "الراحة يستحقونها جهاز",
-  "last_country": "LY",
-  "last_attempt": "2026-09-09T17:06:20+00:00",
-  "added_last_attempt": 0,
-  "learned_last_attempt": 0,
+  "attempts": 2215,
+  "last_keyword": "جهاز العناية",
+  "last_country": "KW",
+  "last_attempt": "2026-09-09T17:07:50+00:00",
+  "added_last_attempt": 10,
+  "learned_last_attempt": 39,
   "errors": 4,
   "last_error": "Failed to initialize client: Failed to perform, curl: (6) Could not resolve host: www.facebook.com. See https://curl.se/libcurl/c/libcurl-errors.html first for more details."
 }
