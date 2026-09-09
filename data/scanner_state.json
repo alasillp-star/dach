@@ -1,14 +1,14 @@
 {
-  "cursor": 1074,
+  "cursor": 1079,
   "last_run": null,
   "total_ads": 86,
   "added_last_run": 0,
-  "attempts": 1074,
-  "last_keyword": "فرشاة أسنان كهربائية بتقنية ذكية",
-  "last_country": "MR",
-  "last_attempt": "2026-09-09T07:33:17+00:00",
+  "attempts": 1079,
+  "last_keyword": "زيت المشمش للتغذية العميقة",
+  "last_country": "PS",
+  "last_attempt": "2026-09-09T07:35:35+00:00",
   "added_last_attempt": 0,
   "learned_last_attempt": 0,
-  "errors": 2,
-  "last_error": "Failed to refresh stale session"
+  "errors": 4,
+  "last_error": "Failed to initialize client: Failed to perform, curl: (6) Could not resolve host: www.facebook.com. See https://curl.se/libcurl/c/libcurl-errors.html first for more details."
 }
