@@ -1,14 +1,14 @@
 {
-  "cursor": 1927,
+  "cursor": 1930,
   "last_run": null,
-  "total_ads": 797,
+  "total_ads": 802,
   "added_last_run": 0,
-  "attempts": 1927,
-  "last_keyword": "سيروم الفيتامين سي توحيد",
-  "last_country": "IQ",
-  "last_attempt": "2026-09-09T14:40:41+00:00",
-  "added_last_attempt": 0,
-  "learned_last_attempt": 0,
+  "attempts": 1930,
+  "last_keyword": "سيروم الهيالورونيك أسيد ترطيب",
+  "last_country": "EG",
+  "last_attempt": "2026-09-09T14:42:11+00:00",
+  "added_last_attempt": 5,
+  "learned_last_attempt": 40,
   "errors": 4,
   "last_error": "Failed to initialize client: Failed to perform, curl: (6) Could not resolve host: www.facebook.com. See https://curl.se/libcurl/c/libcurl-errors.html first for more details."
 }
