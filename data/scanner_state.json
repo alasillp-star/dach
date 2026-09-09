@@ -1,14 +1,14 @@
 {
-  "cursor": 869,
+  "cursor": 874,
   "last_run": null,
   "total_ads": 56,
   "added_last_run": 0,
-  "attempts": 869,
-  "last_keyword": "كريم واقي من التلوث",
-  "last_country": "PS",
-  "last_attempt": "2026-09-09T05:50:36+00:00",
-  "added_last_attempt": 2,
-  "learned_last_attempt": 8,
-  "errors": 2,
-  "last_error": "Failed to refresh stale session"
+  "attempts": 874,
+  "last_keyword": "ماء جوز الهند لترطيب البشرة",
+  "last_country": "DJ",
+  "last_attempt": "2026-09-09T05:53:01+00:00",
+  "added_last_attempt": 0,
+  "learned_last_attempt": 0,
+  "errors": 4,
+  "last_error": "Failed to initialize client: Failed to perform, curl: (6) Could not resolve host: www.facebook.com. See https://curl.se/libcurl/c/libcurl-errors.html first for more details."
 }
