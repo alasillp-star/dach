@@ -1,14 +1,14 @@
 {
-  "cursor": 701,
+  "cursor": 705,
   "last_run": null,
   "total_ads": 44,
   "added_last_run": 0,
-  "attempts": 701,
-  "last_keyword": "غسول البشرة برائحة اللافندر",
-  "last_country": "PS",
-  "last_attempt": "2026-09-09T04:26:19+00:00",
+  "attempts": 705,
+  "last_keyword": "تورم الجفون",
+  "last_country": "LB",
+  "last_attempt": "2026-09-09T04:28:20+00:00",
   "added_last_attempt": 0,
   "learned_last_attempt": 0,
-  "errors": 2,
-  "last_error": "Failed to refresh stale session"
+  "errors": 4,
+  "last_error": "Failed to initialize client: Failed to perform, curl: (6) Could not resolve host: www.facebook.com. See https://curl.se/libcurl/c/libcurl-errors.html first for more details."
 }
