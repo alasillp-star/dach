@@ -1,14 +1,14 @@
 {
-  "cursor": 2234,
+  "cursor": 2236,
   "last_run": null,
-  "total_ads": 1073,
+  "total_ads": 1075,
   "added_last_run": 0,
-  "attempts": 2234,
-  "last_keyword": "جهاز التدليك",
-  "last_country": "PS",
-  "last_attempt": "2026-09-09T17:17:23+00:00",
-  "added_last_attempt": 1,
-  "learned_last_attempt": 2,
+  "attempts": 2236,
+  "last_keyword": "ضعف أصابعك؟ الجهاز مصمم",
+  "last_country": "KW",
+  "last_attempt": "2026-09-09T17:18:23+00:00",
+  "added_last_attempt": 2,
+  "learned_last_attempt": 4,
   "errors": 4,
   "last_error": "Failed to initialize client: Failed to perform, curl: (6) Could not resolve host: www.facebook.com. See https://curl.se/libcurl/c/libcurl-errors.html first for more details."
 }
