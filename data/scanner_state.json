@@ -1,14 +1,14 @@
 {
-  "cursor": 1389,
+  "cursor": 1392,
   "last_run": null,
-  "total_ads": 234,
+  "total_ads": 237,
   "added_last_run": 0,
-  "attempts": 1389,
-  "last_keyword": "خصوصًا الصيف كريم العرقسوس",
-  "last_country": "MR",
-  "last_attempt": "2026-09-09T10:10:16+00:00",
-  "added_last_attempt": 0,
-  "learned_last_attempt": 0,
+  "attempts": 1392,
+  "last_keyword": "الصيف كريم",
+  "last_country": "BH",
+  "last_attempt": "2026-09-09T10:11:24+00:00",
+  "added_last_attempt": 3,
+  "learned_last_attempt": 8,
   "errors": 4,
   "last_error": "Failed to initialize client: Failed to perform, curl: (6) Could not resolve host: www.facebook.com. See https://curl.se/libcurl/c/libcurl-errors.html first for more details."
 }
