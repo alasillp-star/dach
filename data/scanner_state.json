@@ -1,14 +1,14 @@
 {
-  "cursor": 1826,
+  "cursor": 1828,
   "last_run": null,
-  "total_ads": 704,
+  "total_ads": 705,
   "added_last_run": 0,
-  "attempts": 1826,
-  "last_keyword": "ويُحيي الأقصى بكريم",
-  "last_country": "JO",
-  "last_attempt": "2026-09-09T13:49:42+00:00",
+  "attempts": 1828,
+  "last_keyword": "الأقصى بكريم",
+  "last_country": "SA",
+  "last_attempt": "2026-09-09T13:50:42+00:00",
   "added_last_attempt": 1,
-  "learned_last_attempt": 1,
+  "learned_last_attempt": 0,
   "errors": 4,
   "last_error": "Failed to initialize client: Failed to perform, curl: (6) Could not resolve host: www.facebook.com. See https://curl.se/libcurl/c/libcurl-errors.html first for more details."
 }
