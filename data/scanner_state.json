@@ -1,14 +1,14 @@
 {
-  "cursor": 1303,
+  "cursor": 1304,
   "last_run": null,
-  "total_ads": 181,
+  "total_ads": 184,
   "added_last_run": 0,
-  "attempts": 1303,
-  "last_keyword": "ترضيك؟ كريم",
-  "last_country": "SA",
-  "last_attempt": "2026-09-09T09:27:57+00:00",
-  "added_last_attempt": 1,
+  "attempts": 1304,
+  "last_keyword": "الكريمات اللي",
+  "last_country": "OM",
+  "last_attempt": "2026-09-09T09:28:06+00:00",
+  "added_last_attempt": 3,
   "learned_last_attempt": 8,
-  "errors": 2,
-  "last_error": "Failed to refresh stale session"
+  "errors": 4,
+  "last_error": "Failed to initialize client: Failed to perform, curl: (6) Could not resolve host: www.facebook.com. See https://curl.se/libcurl/c/libcurl-errors.html first for more details."
 }
