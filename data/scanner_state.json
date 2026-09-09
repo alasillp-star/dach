@@ -1,14 +1,14 @@
 {
-  "cursor": 1036,
+  "cursor": 1040,
   "last_run": null,
-  "total_ads": 79,
+  "total_ads": 80,
   "added_last_run": 0,
-  "attempts": 1036,
-  "last_keyword": "زيت السمك لنمو الشعر",
-  "last_country": "LY",
-  "last_attempt": "2026-09-09T07:14:17+00:00",
-  "added_last_attempt": 0,
-  "learned_last_attempt": 0,
-  "errors": 2,
-  "last_error": "Failed to refresh stale session"
+  "attempts": 1040,
+  "last_keyword": "فرشاة إزالة الجلد الميت",
+  "last_country": "MA",
+  "last_attempt": "2026-09-09T07:16:02+00:00",
+  "added_last_attempt": 1,
+  "learned_last_attempt": 8,
+  "errors": 4,
+  "last_error": "Failed to initialize client: Failed to perform, curl: (6) Could not resolve host: www.facebook.com. See https://curl.se/libcurl/c/libcurl-errors.html first for more details."
 }
