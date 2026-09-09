@@ -1,14 +1,14 @@
 {
-  "cursor": 747,
+  "cursor": 752,
   "last_run": null,
   "total_ads": 50,
   "added_last_run": 0,
-  "attempts": 747,
-  "last_keyword": "جفاف الوجه",
-  "last_country": "LB",
-  "last_attempt": "2026-09-09T04:49:36+00:00",
+  "attempts": 752,
+  "last_keyword": "كاميرا مراقبة صغيرة خفية",
+  "last_country": "SY",
+  "last_attempt": "2026-09-09T04:52:00+00:00",
   "added_last_attempt": 0,
   "learned_last_attempt": 0,
-  "errors": 2,
-  "last_error": "Failed to refresh stale session"
+  "errors": 4,
+  "last_error": "Failed to initialize client: Failed to perform, curl: (6) Could not resolve host: www.facebook.com. See https://curl.se/libcurl/c/libcurl-errors.html first for more details."
 }
