@@ -1,14 +1,14 @@
 {
-  "cursor": 1284,
+  "cursor": 1289,
   "last_run": null,
   "total_ads": 175,
   "added_last_run": 0,
-  "attempts": 1284,
-  "last_keyword": "الحبوب جهاز الأقوى والأكثر",
-  "last_country": "MR",
-  "last_attempt": "2026-09-09T09:18:26+00:00",
+  "attempts": 1289,
+  "last_keyword": "الحبوب جهاز",
+  "last_country": "PS",
+  "last_attempt": "2026-09-09T09:20:35+00:00",
   "added_last_attempt": 0,
   "learned_last_attempt": 0,
-  "errors": 2,
-  "last_error": "Failed to refresh stale session"
+  "errors": 4,
+  "last_error": "Failed to initialize client: Failed to perform, curl: (6) Could not resolve host: www.facebook.com. See https://curl.se/libcurl/c/libcurl-errors.html first for more details."
 }
