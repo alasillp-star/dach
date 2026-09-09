@@ -1,14 +1,14 @@
 {
-  "cursor": 1111,
+  "cursor": 1116,
   "last_run": null,
   "total_ads": 99,
   "added_last_run": 0,
-  "attempts": 1111,
-  "last_keyword": "ظهور بقع سوداء على اليدين",
-  "last_country": "EG",
-  "last_attempt": "2026-09-09T07:51:54+00:00",
+  "attempts": 1116,
+  "last_keyword": "ساعة تنبيه مع مساعد صوتي",
+  "last_country": "MR",
+  "last_attempt": "2026-09-09T07:54:05+00:00",
   "added_last_attempt": 0,
   "learned_last_attempt": 0,
-  "errors": 2,
-  "last_error": "Failed to refresh stale session"
+  "errors": 4,
+  "last_error": "Failed to initialize client: Failed to perform, curl: (6) Could not resolve host: www.facebook.com. See https://curl.se/libcurl/c/libcurl-errors.html first for more details."
 }
