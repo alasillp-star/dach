@@ -1,14 +1,14 @@
 {
-  "cursor": 2066,
+  "cursor": 2071,
   "last_run": null,
   "total_ads": 948,
   "added_last_run": 0,
-  "attempts": 2066,
-  "last_keyword": "جهاز إزالة شعر",
-  "last_country": "PS",
-  "last_attempt": "2026-09-09T15:51:19+00:00",
-  "added_last_attempt": 6,
-  "learned_last_attempt": 40,
+  "attempts": 2071,
+  "last_keyword": "وصل جهاز إزالة",
+  "last_country": "DJ",
+  "last_attempt": "2026-09-09T15:53:49+00:00",
+  "added_last_attempt": 0,
+  "learned_last_attempt": 0,
   "errors": 4,
   "last_error": "Failed to initialize client: Failed to perform, curl: (6) Could not resolve host: www.facebook.com. See https://curl.se/libcurl/c/libcurl-errors.html first for more details."
 }
