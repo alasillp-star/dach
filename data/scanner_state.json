@@ -1,14 +1,14 @@
 {
-  "cursor": 1930,
+  "cursor": 1931,
   "last_run": null,
-  "total_ads": 802,
+  "total_ads": 805,
   "added_last_run": 0,
-  "attempts": 1930,
-  "last_keyword": "سيروم الهيالورونيك أسيد ترطيب",
-  "last_country": "EG",
-  "last_attempt": "2026-09-09T14:42:11+00:00",
-  "added_last_attempt": 5,
-  "learned_last_attempt": 40,
+  "attempts": 1931,
+  "last_keyword": "امتلاء للبشرة سيروم الفيتامين",
+  "last_country": "JO",
+  "last_attempt": "2026-09-09T14:42:41+00:00",
+  "added_last_attempt": 3,
+  "learned_last_attempt": 18,
   "errors": 4,
   "last_error": "Failed to initialize client: Failed to perform, curl: (6) Could not resolve host: www.facebook.com. See https://curl.se/libcurl/c/libcurl-errors.html first for more details."
 }
