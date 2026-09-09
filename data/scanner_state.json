@@ -1,14 +1,14 @@
 {
-  "cursor": 1934,
+  "cursor": 1939,
   "last_run": null,
   "total_ads": 810,
   "added_last_run": 0,
-  "attempts": 1934,
-  "last_keyword": "سيروم الفيتامين سي",
-  "last_country": "OM",
-  "last_attempt": "2026-09-09T14:44:11+00:00",
-  "added_last_attempt": 5,
-  "learned_last_attempt": 31,
+  "attempts": 1939,
+  "last_keyword": "للبشرة سيروم",
+  "last_country": "LY",
+  "last_attempt": "2026-09-09T14:46:41+00:00",
+  "added_last_attempt": 0,
+  "learned_last_attempt": 0,
   "errors": 4,
   "last_error": "Failed to initialize client: Failed to perform, curl: (6) Could not resolve host: www.facebook.com. See https://curl.se/libcurl/c/libcurl-errors.html first for more details."
 }
