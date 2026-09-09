@@ -1,14 +1,14 @@
 {
-  "cursor": 2111,
+  "cursor": 2112,
   "last_run": null,
-  "total_ads": 992,
+  "total_ads": 993,
   "added_last_run": 0,
-  "attempts": 2111,
-  "last_keyword": "بالفرشاة السعر",
-  "last_country": "MA",
-  "last_attempt": "2026-09-09T16:13:57+00:00",
-  "added_last_attempt": 0,
-  "learned_last_attempt": 0,
+  "attempts": 2112,
+  "last_keyword": "أنظف يوم جهاز تنظيف",
+  "last_country": "LB",
+  "last_attempt": "2026-09-09T16:14:27+00:00",
+  "added_last_attempt": 1,
+  "learned_last_attempt": 8,
   "errors": 4,
   "last_error": "Failed to initialize client: Failed to perform, curl: (6) Could not resolve host: www.facebook.com. See https://curl.se/libcurl/c/libcurl-errors.html first for more details."
 }
