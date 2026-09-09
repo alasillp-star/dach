@@ -1,14 +1,14 @@
 {
-  "cursor": 2236,
+  "cursor": 2237,
   "last_run": null,
-  "total_ads": 1075,
+  "total_ads": 1076,
   "added_last_run": 0,
-  "attempts": 2236,
-  "last_keyword": "ضعف أصابعك؟ الجهاز مصمم",
-  "last_country": "KW",
-  "last_attempt": "2026-09-09T17:18:23+00:00",
-  "added_last_attempt": 2,
-  "learned_last_attempt": 4,
+  "attempts": 2237,
+  "last_keyword": "جهاز إعادة تأهيل الأصابع",
+  "last_country": "MA",
+  "last_attempt": "2026-09-09T17:18:53+00:00",
+  "added_last_attempt": 1,
+  "learned_last_attempt": 0,
   "errors": 4,
   "last_error": "Failed to initialize client: Failed to perform, curl: (6) Could not resolve host: www.facebook.com. See https://curl.se/libcurl/c/libcurl-errors.html first for more details."
 }
