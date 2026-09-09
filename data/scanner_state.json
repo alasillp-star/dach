@@ -1,14 +1,14 @@
 {
-  "cursor": 1209,
+  "cursor": 1214,
   "last_run": null,
   "total_ads": 105,
   "added_last_run": 0,
-  "attempts": 1209,
-  "last_keyword": "كريمات إزالة شوائب البشرة",
-  "last_country": "LB",
-  "last_attempt": "2026-09-09T08:40:54+00:00",
+  "attempts": 1214,
+  "last_keyword": "بلسم نباتي بالأعشاب البرية",
+  "last_country": "SY",
+  "last_attempt": "2026-09-09T08:43:05+00:00",
   "added_last_attempt": 0,
   "learned_last_attempt": 0,
-  "errors": 2,
-  "last_error": "Failed to refresh stale session"
+  "errors": 4,
+  "last_error": "Failed to initialize client: Failed to perform, curl: (6) Could not resolve host: www.facebook.com. See https://curl.se/libcurl/c/libcurl-errors.html first for more details."
 }
