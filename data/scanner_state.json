@@ -1,14 +1,14 @@
 {
-  "cursor": 1478,
+  "cursor": 1477,
   "last_run": null,
-  "total_ads": 321,
+  "total_ads": 318,
   "added_last_run": 0,
-  "attempts": 1478,
-  "last_keyword": "المنزل جهاز ازالة",
-  "last_country": "PS",
-  "last_attempt": "2026-09-09T10:54:40+00:00",
-  "added_last_attempt": 3,
-  "learned_last_attempt": 12,
+  "attempts": 1477,
+  "last_keyword": "باب المنزل جهاز",
+  "last_country": "LY",
+  "last_attempt": "2026-09-09T10:54:37+00:00",
+  "added_last_attempt": 1,
+  "learned_last_attempt": 1,
   "errors": 4,
   "last_error": "Failed to initialize client: Failed to perform, curl: (6) Could not resolve host: www.facebook.com. See https://curl.se/libcurl/c/libcurl-errors.html first for more details."
 }
