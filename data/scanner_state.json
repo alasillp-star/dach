@@ -1,14 +1,14 @@
 {
-  "cursor": 1502,
+  "cursor": 1503,
   "last_run": null,
-  "total_ads": 387,
+  "total_ads": 391,
   "added_last_run": 0,
-  "attempts": 1502,
-  "last_keyword": "جهاز تحكم بعد، يوفر",
-  "last_country": "MA",
-  "last_attempt": "2026-09-09T11:07:23+00:00",
-  "added_last_attempt": 14,
-  "learned_last_attempt": 51,
+  "attempts": 1503,
+  "last_keyword": "مروحة قوية، وفي نفس",
+  "last_country": "LB",
+  "last_attempt": "2026-09-09T11:07:27+00:00",
+  "added_last_attempt": 4,
+  "learned_last_attempt": 0,
   "errors": 4,
   "last_error": "Failed to initialize client: Failed to perform, curl: (6) Could not resolve host: www.facebook.com. See https://curl.se/libcurl/c/libcurl-errors.html first for more details."
 }
