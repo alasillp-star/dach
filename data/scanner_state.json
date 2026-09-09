@@ -1,14 +1,14 @@
 {
-  "cursor": 1199,
+  "cursor": 1204,
   "last_run": null,
-  "total_ads": 100,
+  "total_ads": 105,
   "added_last_run": 0,
-  "attempts": 1199,
-  "last_keyword": "مقشرات الوجه بحمض الستريك",
-  "last_country": "OM",
-  "last_attempt": "2026-09-09T08:35:54+00:00",
-  "added_last_attempt": 0,
-  "learned_last_attempt": 0,
-  "errors": 2,
-  "last_error": "Failed to refresh stale session"
+  "attempts": 1204,
+  "last_keyword": "البقع الصفراء على الجلد",
+  "last_country": "LY",
+  "last_attempt": "2026-09-09T08:38:05+00:00",
+  "added_last_attempt": 5,
+  "learned_last_attempt": 19,
+  "errors": 4,
+  "last_error": "Failed to initialize client: Failed to perform, curl: (6) Could not resolve host: www.facebook.com. See https://curl.se/libcurl/c/libcurl-errors.html first for more details."
 }
