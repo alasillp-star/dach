@@ -1,14 +1,14 @@
 {
-  "cursor": 1448,
+  "cursor": 1447,
   "last_run": null,
-  "total_ads": 307,
+  "total_ads": 304,
   "added_last_run": 0,
-  "attempts": 1448,
-  "last_keyword": "كبير أول شهرين جهاز",
-  "last_country": "JO",
-  "last_attempt": "2026-09-09T10:39:40+00:00",
-  "added_last_attempt": 3,
-  "learned_last_attempt": 0,
+  "attempts": 1447,
+  "last_keyword": "الجديد جهاز",
+  "last_country": "EG",
+  "last_attempt": "2026-09-09T10:39:29+00:00",
+  "added_last_attempt": 6,
+  "learned_last_attempt": 24,
   "errors": 4,
   "last_error": "Failed to initialize client: Failed to perform, curl: (6) Could not resolve host: www.facebook.com. See https://curl.se/libcurl/c/libcurl-errors.html first for more details."
 }
