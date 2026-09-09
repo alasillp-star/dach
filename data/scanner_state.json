@@ -6,9 +6,9 @@
   "attempts": 1502,
   "last_keyword": "جهاز تحكم بعد، يوفر",
   "last_country": "MA",
-  "last_attempt": "2026-09-09T11:06:56+00:00",
+  "last_attempt": "2026-09-09T11:07:23+00:00",
   "added_last_attempt": 14,
-  "learned_last_attempt": 72,
+  "learned_last_attempt": 51,
   "errors": 4,
   "last_error": "Failed to initialize client: Failed to perform, curl: (6) Could not resolve host: www.facebook.com. See https://curl.se/libcurl/c/libcurl-errors.html first for more details."
 }
