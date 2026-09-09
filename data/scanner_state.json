@@ -1,14 +1,14 @@
 {
-  "cursor": 956,
+  "cursor": 961,
   "last_run": null,
   "total_ads": 72,
   "added_last_run": 0,
-  "attempts": 956,
-  "last_keyword": "إسفنجة تنظيف السيليكون المضادة للبكتيريا",
-  "last_country": "MA",
-  "last_attempt": "2026-09-09T06:34:17+00:00",
+  "attempts": 961,
+  "last_keyword": "ماسكارا بلون رمادي داكن",
+  "last_country": "IQ",
+  "last_attempt": "2026-09-09T06:36:31+00:00",
   "added_last_attempt": 0,
   "learned_last_attempt": 0,
-  "errors": 2,
-  "last_error": "Failed to refresh stale session"
+  "errors": 4,
+  "last_error": "Failed to initialize client: Failed to perform, curl: (6) Could not resolve host: www.facebook.com. See https://curl.se/libcurl/c/libcurl-errors.html first for more details."
 }
