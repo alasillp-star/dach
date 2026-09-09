@@ -1,14 +1,14 @@
 {
-  "cursor": 2073,
+  "cursor": 2074,
   "last_run": null,
-  "total_ads": 956,
+  "total_ads": 965,
   "added_last_run": 0,
-  "attempts": 2073,
-  "last_keyword": "وصل جهاز",
-  "last_country": "TN",
-  "last_attempt": "2026-09-09T15:54:49+00:00",
-  "added_last_attempt": 8,
-  "learned_last_attempt": 16,
+  "attempts": 2074,
+  "last_keyword": "جهاز قياس ضغط الدم",
+  "last_country": "IQ",
+  "last_attempt": "2026-09-09T15:55:19+00:00",
+  "added_last_attempt": 9,
+  "learned_last_attempt": 15,
   "errors": 4,
   "last_error": "Failed to initialize client: Failed to perform, curl: (6) Could not resolve host: www.facebook.com. See https://curl.se/libcurl/c/libcurl-errors.html first for more details."
 }
